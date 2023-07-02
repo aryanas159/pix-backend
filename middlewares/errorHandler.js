@@ -20,7 +20,7 @@ const errorHandler = (err, req, res, next) => {
         customError.statusCode = StatusCodes.NOT_FOUND
         customError.message = `No item found with id : ${err.value}`
     }
-    return res.status(customError.statusCode).json({message: customError.message})
+    return res.status(customError.statusCode).json({message: customError.message, err})
 }
 
 module.exports = errorHandler;
