@@ -10,19 +10,20 @@ app.use(
 		origin: "https://ssaryans-pix.netlify.app",
 	})
 );
-const multer = require("multer");
+// app.use(upload.array()); 
+// const multer = require("multer");
 
-const storage = multer.diskStorage({
-	destination: function (req, file, cb) {
-		cb(null, "./uploads");
-	},
-	filename: function (req, file, cb) {
-		const fileName = req.body.picturePath;
-		cb(null, fileName);
-	},
-});
+// const storage = multer.diskStorage({
+// 	destination: function (req, file, cb) {
+// 		cb(null, "./uploads");
+// 	},
+// 	filename: function (req, file, cb) {
+// 		const fileName = req.body.picturePath;
+// 		cb(null, fileName);
+// 	},
+// });
 
-const upload = multer({ storage });
+// const upload = multer({ storage });
 
 //port
 const PORT = process.env.PORT || 3000;
@@ -33,24 +34,28 @@ const usersRouter = require("./routes/usersRoute");
 const postsRouter = require("./routes/postsRoute");
 //middlewares
 const errorHandler = require("./middlewares/errorHandler");
+const uploadImage = require("./middlewares/uploadImage");
 // app.use('/image', express.static(path.join(__dirname, 'uploads')), (req, res) => {
 // 	console.log({res, req})
 // 	res.json('jbskjbdkjsb')
 // })
-app.use(express.static(path.join(__dirname, "uploads")));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 
 //api
-app.get("/image/:picturePath", async (req, res) => {
-	const { picturePath } = req.params;
-	const imgPath = path.join(__dirname, "uploads", picturePath);
-	res.sendFile(imgPath);
+// app.get("/image/:picturePath", async (req, res) => {
+// 	const { picturePath } = req.params;
+// 	const imgPath = path.join(__dirname, "uploads", picturePath);
+// 	res.sendFile(imgPath);
+// });
+app.post("/upload", (req, res) => {
+	console.log(req.body)
+	res.json('uploads')
 });
-
-app.use("/auth", upload.single("picture"), authRouter);
+app.use("/auth", authRouter);
 app.use("/users", usersRouter);
-app.use("/posts", upload.single("picture"), postsRouter);
+app.use("/posts", postsRouter);
 app.use(errorHandler);
 
 const start = async () => {

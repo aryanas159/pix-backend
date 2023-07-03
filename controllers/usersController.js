@@ -4,11 +4,11 @@ const { NotFoundError, BadRequestError, UnauthenticatedError } = require("../err
 
 const searchUser = async (req, res) => {
 	const {name} = req.query;
-	const users = await User.find({firstName: {$regex: name, $options: 'i'}})
+	const users = await User.find({firstName: {$regex: name, $options: 'i'}}).select("-pictureBase64Url")
 	res.json({users})
 }
 const getAllUsers = async (req, res) => {
-	const users = await User.find({})
+	const users = await User.find({}).select("-pictureBase64Url")
 	res.status(200).json({users})
 }
 const getUser = async (req, res) => {
@@ -17,7 +17,7 @@ const getUser = async (req, res) => {
 	if (!id) {
 		throw new BadRequestError("Please provide userId");
 	}
-	const user = await User.findById(id);
+	const user = await User.findById(id).select("-pictureBase64Url");
 	if (!user) {
 		throw new NotFoundError(`User with id ${id} does not exist`);
 	}
@@ -35,31 +35,33 @@ const getUserFriends = async (req, res) => {
 		})
 	);
 	const formattedFriends = friends.map(
-		({ _id, firstName, lastName, email, picturePath }) => {
-			return { _id, firstName, lastName, email, picturePath };
+		({ _id, firstName, lastName, email }) => {
+			return { _id, firstName, lastName, email };
 		}
 	);
 	res.status(StatusCodes.OK).json({ formattedFriends });
 };
-const getOwnFriends = async (req, res) => {
-	const userId = req.user.userId;
-	if (!userId) {
-		throw new UnauthenticatedError('Token Invalid');
-	}
+
+
+const getUserImage = async (req, res) => {
 	
+	const {userId} = req.params;
+	console.log(userId)
+	if (!userId) {
+		throw new BadRequestError('Provide userId')
+	}
 	const user = await User.findById(userId);
-	const friends = await Promise.all(
-		user.friends.map((userId) => {
-			return User.findById(userId);
-		})
-	);
-	const formattedFriends = friends.map(
-		({ _id, firstName, lastName, email, picturePath }) => {
-			return { _id, firstName, lastName, email, picturePath };
-		}
-	);
-	res.status(StatusCodes.OK).json({ formattedFriends });
+	if (!user) {
+		throw new NotFoundError(`User with id ${userId} does not exist`);
+	}
+	const pictureBase64Url = user.pictureBase64Url;
+	if (!pictureBase64Url) {
+		throw new NotFoundError('User Image does not exist')
+	}
+	const base64String = pictureBase64Url.split(',')[1];
+	res.status(StatusCodes.OK).json({base64String})
 }
+
 const addRemoveFriend = async (req, res) => {
 	const { friendId } = req.params;
 	const id = req.user.userId;
@@ -96,4 +98,4 @@ const addRemoveFriend = async (req, res) => {
 	// );
 	res.status(StatusCodes.OK).json({ friends: user.friends });
 };
-module.exports = { searchUser, getAllUsers, getUser, getUserFriends, addRemoveFriend, getOwnFriends };
+module.exports = { searchUser, getAllUsers, getUser, getUserFriends, addRemoveFriend, getUserImage };

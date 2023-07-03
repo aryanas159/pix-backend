@@ -28,7 +28,7 @@ const UserSchema = new Schema(
 			type: String,
 			required: true,
 		},
-		picturePath: {
+		pictureBase64Url: {
 			type: String,
 			default: "",
 		},
@@ -49,7 +49,6 @@ UserSchema.methods.createJwt = async function() {
 		userId: this._id,
 		firstName: this.firstName,
 		lastName: this.lastName,
-		picturePath: this.picturePath,
 	}
 	return jwt.sign(payload, process.env.JWT_KEY, {expiresIn: '1d'});
 }
