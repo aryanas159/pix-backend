@@ -4,7 +4,7 @@ const {
 	getUser,
 	getUserFriends,
 	addRemoveFriend,
-	getUserImage
+	getUserImage,
 } = require("../controllers/usersController");
 const express = require("express");
 const router = express.Router();
