@@ -3,7 +3,7 @@ const { StatusCodes } = require("http-status-codes");
 const { BadRequestError, UnauthenticatedError } = require("../errors");
 
 const getAllPosts = async (req, res) => {
-	const posts = await Post.find({}).sort("-createdAt");
+	const posts = await Post.find({}).select("-pictureBase64Url").sort("-createdAt");
 	res.status(StatusCodes.OK).json({ posts });
 };
 const getUserPosts = async (req, res) => {
@@ -11,7 +11,7 @@ const getUserPosts = async (req, res) => {
 	if (!id) {
 		throw new BadRequestError("Id is not provided");
 	}
-	const posts = await Post.find({ userId: id });
+	const posts = await Post.find({ userId: id }).select("-pictureBase64Url");
 	res.status(StatusCodes.OK).json({ posts });
 };
 
@@ -20,10 +20,9 @@ const createPost = async (req, res) => {
 		userId,
 		firstName,
 		lastName,
-		picturePath: userPicturePath,
 	} = req.user;
 
-	const { postPicturePath, description } = req.body;
+	const { pictureBase64Url, description } = req.body;
 
 	if (!userId || !firstName || !lastName) {
 		throw new UnauthenticatedError("Token Invalid");
@@ -32,11 +31,10 @@ const createPost = async (req, res) => {
 		userId,
 		firstName,
 		lastName,
-		userPicturePath,
-		postPicturePath,
+		pictureBase64Url,
 		description,
 	});
-	const allPosts = await Post.find({}).sort("-createdAt");
+	const allPosts = await Post.find({}).select("-pictureBase64Url").sort("-createdAt");
 	res.status(StatusCodes.OK).json({ allPosts });
 };
 const likePost = async (req, res) => {
@@ -48,7 +46,7 @@ const likePost = async (req, res) => {
 	if (!userId) {
 		throw new UnauthenticatedError("Token Invalid");
 	}
-	const post = await Post.findById(postId);
+	const post = await Post.findById(postId).select("-pictureBase64Url");
 	const isLiked = !!post.likes.get(userId);
 	if (isLiked) {
 		post.likes.delete(userId);
@@ -68,7 +66,6 @@ const postComment = async (req, res) => {
 		userId,
 		firstName,
 		lastName,
-		picturePath
 	} = req.user;
 	if (!userId || !firstName || !lastName) {
 		throw new UnauthenticatedError("Token Invalid");
@@ -82,7 +79,6 @@ const postComment = async (req, res) => {
         postId,
         firstName,
         lastName,
-        picturePath,
         content
     }
 
@@ -91,6 +87,22 @@ const postComment = async (req, res) => {
     await post.save();
     res.status(StatusCodes.CREATED).json({comments: post.comments})
 };
+const getPostImage = async (req, res) => {
+	const {postId} = req.params;
+	if (!postId) {
+		throw new BadRequestError('Provide postId')
+	}
+	const post = await Post.findById(postId);
+	if (!post) {
+		throw new NotFoundError(`Post with id ${postId} does not exist`);
+	}
+	const pictureBase64Url = post.pictureBase64Url;
+	if (!pictureBase64Url) {
+		throw new NotFoundError('post Image does not exist')
+	}
+	const base64String = pictureBase64Url.split(',')[1];
+	res.status(StatusCodes.OK).json({base64String})
+}
 
 module.exports = {
 	getAllPosts,
@@ -98,4 +110,5 @@ module.exports = {
 	createPost,
 	likePost,
 	postComment,
+	getPostImage
 };

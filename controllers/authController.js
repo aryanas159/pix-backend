@@ -16,7 +16,7 @@ const login = async (req, res) => {
     if (!email || !password) {
         throw new BadRequestError('Email and Password must be provided');
     }
-    const user = await User.findOne({email});
+    const user = await User.findOne({email}).select("-pictureBase64Url");
     if (!user) {
         throw new NotFoundError('User with the provided email doesn\'t exist');
     }
